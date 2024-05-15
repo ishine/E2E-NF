@@ -1,0 +1,60 @@
+[tool.poetry]
+name = "formant-hifi-gan"
+version = "0.1.0"
+description = ""
+authors = ["misumisumi <dragon511southern@gmail.com>"]
+readme = "README.md"
+packages = [{ include = "formant_hifi_gan", from = "src" }]
+
+[tool.poetry.scripts]
+extract_features = "formant_hifi_gan.bin.extract_features:main"
+compute_statistics = "formant_hifi_gan.bin.compute_statistics:main"
+train = "formant_hifi_gan.bin.train:main"
+decode = "formant_hifi_gan.bin.decode:main"
+anasyn = "formant_hifi_gan.bin.anasyn:main"
+
+[tool.poetry.dependencies]
+python = "~3.11"
+torch = [
+    { version = "~2.1.0+cu121", source = "torch_cu121", markers = "sys_platform == 'linux'" },
+    { version = "~2.1.0+cu121", source = "torch_cu121", markers = "sys_platform == 'win32'" },
+    { version = "~2.1.0", source = "PyPI", markers = "sys_platform == 'darwin'" },
+]
+torchaudio = [
+    { version = "~2.1.0+cu121", source = "torch_cu121", markers = "sys_platform == 'linux'" },
+    { version = "~2.1.0+cu121", source = "torch_cu121", markers = "sys_platform == 'win32'" },
+    { version = "~2.1.0", source = "PyPI", markers = "sys_platform == 'darwin'" },
+]
+torchvision = [
+    { version = "~0.16.0+cu121", source = "torch_cu121", markers = "sys_platform == 'linux'" },
+    { version = "~0.16.0+cu121", source = "torch_cu121", markers = "sys_platform == 'win32'" },
+    { version = "~0.16.0", source = "PyPI", markers = "sys_platform == 'darwin'" },
+]
+pyworld = { git = "https://github.com/JeremyCCHsu/Python-Wrapper-for-World-Vocoder.git" }
+librosa = "^0.10.1"
+praat-parselmouth = "^0.4.3"
+pyreaper = "^0.0.10"
+pysptk = "^0.2.2"
+matplotlib = "^3.8.4"
+h5py = "^3.11.0"
+hydra-core = "^1.3.2"
+tqdm = "^4.66.4"
+tensorboard = "^2.16.2"
+
+[tool.poetry.group.dev.dependencies]
+notebook = "^7.0.6"
+nbclassic = "^1.0.0"
+jupyter-console = "^6.6.3"
+debugpy = "^1.8.0"
+
+[[tool.poetry.source]]
+name = "torch_cu121"
+url = "https://download.pytorch.org/whl/cu121"
+priority = "supplemental"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.typos.default.extend-words]
+fo = "fo"
