@@ -1,0 +1,23 @@
+NOTICES
+
+This repository incorporates material as listed below or described in the code.
+
+
+---------------------------------------------------------
+
+ParallelWaveGAN
+https://github.com/kan-bayashi/ParallelWaveGAN
+MIT License
+
+SiFiGAN
+https://github.com/chomeyama/SiFiGAN/blob/main/LICENSE
+MIT License
+
+DDSP-SVC
+https://github.com/yxlllc/DDSP-SVC/blob/master/LICENSE
+MIT License
+
+ttslearn
+https://github.com/r9y9/ttslearn/blob/master/LICENSE
+MIT License
+

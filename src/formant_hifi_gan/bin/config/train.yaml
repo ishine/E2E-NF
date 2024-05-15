@@ -1,0 +1,22 @@
+# @package _global_
+
+defaults:
+  - _self_
+  - generator: hifigan
+  - discriminator: hifigan
+  - train: hifigan
+  - data: jvs100
+
+hydra:
+  run:
+    dir: ./
+  output_subdir: null
+  job_logging:
+    formatters:
+      simple:
+        format: "[%(asctime)s][%(levelname)s][%(module)s | %(lineno)s] %(message)s"
+    disable_existing_loggers: false
+
+out_dir: ./exp # Directory to output training results.
+seed: 12345 # Seed number for random numbers.
+device: cuda:0

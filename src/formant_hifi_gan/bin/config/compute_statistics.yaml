@@ -1,0 +1,26 @@
+# @package _global_
+
+hydra:
+  run:
+    dir: ./
+  output_subdir: null
+  job_logging:
+    formatters:
+      simple:
+        format: "[%(asctime)s][%(levelname)s][%(module)s | %(lineno)s] %(message)s"
+    disable_existing_loggers: false
+
+feats: data/scp/jsut.list # List file of input features.
+stats: data/stats/jsut.joblib # Path to file to output statistics.
+feat_types: [
+    "f0",
+    "lcf0",
+    "cf1",
+    "cf2",
+    "cf3",
+    "cf4",
+    "uv",
+    "slope",
+    "centroid",
+    "energy",
+  ] # Feature types.
