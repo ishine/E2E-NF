@@ -8,7 +8,7 @@ import soundfile as sf
 import torch
 from formant_hifi_gan.datasets import FeatDataset
 from formant_hifi_gan.features.signalgenerator import SignalGenerator
-from formant_hifi_gan.utils.utils import dilated_factor
+from formant_hifi_gan.models import dilated_factor
 from hydra.utils import to_absolute_path
 from omegaconf import DictConfig
 from tqdm import tqdm
@@ -28,6 +28,10 @@ def main(config: DictConfig) -> None:
 
     # set device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if config.device != "":
+        device = torch.device(config.device)
+    else:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logger.info(f"Decode on {device}.")
 
     # load pre-trained model from checkpoint file

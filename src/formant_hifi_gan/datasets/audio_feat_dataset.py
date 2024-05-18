@@ -182,8 +182,11 @@ class FeatDataset(Dataset):
         hop_size: int = 120,
         aux_feats: list[str] = [
             "uv",
-            "cf0",
-            "cformants",
+            "lcf0",
+            "cf1",
+            "cf2",
+            "cf3",
+            "cf4",
             "slope",
             "centroid",
             "energy",
@@ -266,7 +269,7 @@ class FeatDataset(Dataset):
             aux_feat = self.scaler[f"{feat_type}"].transform(aux_feat)
             if feat_type in ["lcf0"]:
                 aux_feat = np.log(np.exp(aux_feat) * self.f0_factor)
-            elif feat_type in ["f1", "f2", "f3", "f4"]:
+            elif feat_type in ["cf1", "cf2", "cf3", "cf4"]:
                 aux_feat *= self.formants_factor[int(feat_type[-1])]
             aux_feats += [aux_feat]
         aux_feats = np.concatenate(aux_feats, axis=1)

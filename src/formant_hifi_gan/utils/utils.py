@@ -1,21 +1,41 @@
-import numpy as np
+import copy
+import os
+from logging import getLogger
+
+logger = getLogger(__name__)
 
 
-def dilated_factor(batch_f0, fs, dense_factor):
-    """Pitch-dependent dilated factor
+def spk_division(file_list: list[os.PathLike], config: dict, spkinfo: dict) -> list[tuple[os.PathLike, dict]]:
+    """Divide list into speaker-dependent list
 
     Args:
-        batch_f0 (ndarray): the f0 sequence (T)
-        fs (int): sampling rate
-        dense_factor (int): the number of taps in one cycle
+        file_list (list): Waveform list
+        config (dict): Config
+        spkinfo (dict): Dictionary of
+            speaker-dependent f0 range and power threshold
+        split: Path split string
 
     Return:
-        dilated_factors(np array):
-            float array of the pitch-dependent dilated factors (T)
 
     """
-    batch_f0[batch_f0 == 0] = fs / dense_factor
-    dilated_factors = np.ones(batch_f0.shape) * fs / dense_factor / batch_f0
-    assert np.all(dilated_factors > 0)
+    split = os.path.sep
+    file_and_conf_list = []
+    per_spk_conf = {}
+    for file in file_list:
+        spk = file.split(split)[config.spkidx]
+        if per_spk_conf.get(spk) is not None:
+            tempc = per_spk_conf[spk]
+        else:
+            tempc = copy.deepcopy(config)
+            if spk in spkinfo:
+                for key in spkinfo[spk].keys():
+                    tempc[key] = spkinfo[spk][key]
+                per_spk_conf[spk] = tempc
+            else:
+                msg = f"Since {spk} is not in spkinfo dict, "
+                msg += "use default settings."
+                logger.info(msg)
+                per_spk_conf[spk] = tempc
+        file_and_conf_list.append((file, tempc))
 
-    return dilated_factors
+    return file_and_conf_list

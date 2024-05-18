@@ -12,7 +12,7 @@ import numpy as np
 import torch
 from formant_hifi_gan.datasets import AudioFeatDataset
 from formant_hifi_gan.features.signalgenerator import SignalGenerator
-from formant_hifi_gan.utils.utils import dilated_factor
+from formant_hifi_gan.models import dilated_factor
 from hydra.utils import to_absolute_path
 from omegaconf import DictConfig, OmegaConf
 from torch.utils.data import DataLoader
@@ -72,7 +72,9 @@ class Trainer(object):
 
     def run(self):
         """Run training."""
-        self.tqdm = tqdm(initial=self.steps, total=self.config.train.train_max_steps, desc="[train]")
+        self.tqdm = tqdm(
+            initial=self.steps, total=self.config.train.train_max_steps, desc="[train]", dynamic_ncols=True
+        )
         while True:
             # train one epoch
             self._train_epoch()
