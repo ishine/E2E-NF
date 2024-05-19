@@ -1,5 +1,6 @@
 import os
 from logging import getLogger
+from typing import Optional
 
 import numpy as np
 import torch
@@ -11,20 +12,36 @@ logger = getLogger(__name__)
 os.environ["LRU_CACHE_CAPACITY"] = "3"
 
 
-def dynamic_range_compression(x: np.array, C: float = 1.0, clip_val: float = 1e-5):
-    return np.log(np.clip(x, a_min=clip_val, a_max=None) * C)
+def dynamic_range_compression(x: np.array, C: float = 1.0, clip_val: float = 1e-5, log="log"):
+    return getattr(np, log)(torch.clamp(x, min=clip_val) * C)
 
 
-def dynamic_range_decompression(x: np.array, C: float = 1.0):
-    return np.exp(x) / C
+def dynamic_range_decompression(x: np.array, C: float = 1.0, log="log"):
+    if log == "log":
+        return np.exp(x) / C
+    elif log == "log2":
+        return np.power(2, x) / C
+    elif log == "log10":
+        return np.power(10, x) / C
+    else:
+        error_msg = f"Invalid log type: {log}"
+        ValueError(error_msg)
 
 
-def dynamic_range_compression_torch(x: Tensor, C: float = 1.0, clip_val: float = 1e-5):
-    return torch.log(torch.clamp(x, min=clip_val) * C)
+def dynamic_range_compression_torch(x: Tensor, C: float = 1.0, clip_val: float = 1e-5, log="log"):
+    return getattr(torch, log)(torch.clamp(x, min=clip_val) * C)
 
 
-def dynamic_range_decompression_torch(x: Tensor, C: float = 1.0):
-    return torch.exp(x) / C
+def dynamic_range_decompression_torch(x: Tensor, C: float = 1.0, log="log"):
+    if log == "log":
+        return torch.exp(x) / C
+    elif log == "log2":
+        return torch.pow(2, x) / C
+    elif log == "log10":
+        return torch.pow(10, x) / C
+    else:
+        error_msg = f"Invalid log type: {log}"
+        ValueError(error_msg)
 
 
 class STFT:
@@ -90,15 +107,15 @@ class STFT:
 
         return spec.squeeze(0)
 
-    def to_mel(self, spec: Tensor, compress: bool = True) -> Tensor:
+    def to_mel(self, spec: Tensor, log: str = "log") -> Tensor:
         """return log-scale mel spctrogram
 
         Args:
             spec: linear spectrogram
-            compress: is dynamic range compression applied?
+            log: log-scale
 
         Returns:
-            log-scale mel spectrogram
+            (log-scale) mel spectrogram
         """
         sampling_rate = self.target_sr
         n_mels = self.n_mels
@@ -112,11 +129,11 @@ class STFT:
             mel = librosa_mel_fn(sr=sampling_rate, n_fft=n_fft, n_mels=n_mels, fmin=fmin, fmax=fmax)
             self.mel_basis[mel_basis_key] = torch.from_numpy(mel).float().to(spec.device)
 
-        spec = torch.matmul(self.mel_basis[mel_basis_key], spec)
-        if compress:
-            spec = dynamic_range_compression_torch(spec, clip_val=clip_val)
+        mfbsp = torch.matmul(self.mel_basis[mel_basis_key], spec)
+        if log is not None:
+            mfbsp = dynamic_range_compression_torch(spec, clip_val=clip_val, log=log)
 
-        return spec
+        return mfbsp
 
     def __call__(self, audio: Tensor) -> Tensor:
         spect = self.get_linear(audio)

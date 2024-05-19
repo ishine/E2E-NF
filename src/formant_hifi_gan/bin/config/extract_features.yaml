@@ -31,9 +31,10 @@ hop_length: 300 # Hop size.
 win_size: 1200 # Window length.
 n_fft: 2048
 window: hann # Window function.
-fmin: 0 # Minimum frequency in mel basis calculation.
-fmax: 8000 # Maximum frequency in mel basis calculation.
+fmin: 80 # Minimum frequency in mel basis calculation.
+fmax: 7600 # Maximum frequency in mel basis calculation.
 clip_val: 1e-5
+log: "log10"
 
 # Praat settings
 # Use fft_size or win_length of Mel-spectrogram extraction setting

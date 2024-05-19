@@ -82,7 +82,7 @@ def process(filepath: PathLike, config: DictConfig):
     )
 
     spec = to_stft.get_linear(torch.from_numpy(wav.astype(np.float32)))
-    mfbsp = to_stft.to_mel(spec, compress=True)
+    mfbsp = to_stft.to_mel(spec, log=config.log)
     mfbsp = mfbsp.numpy()
 
     f0 = f0_extractor.extract(wav, return_time=False)
