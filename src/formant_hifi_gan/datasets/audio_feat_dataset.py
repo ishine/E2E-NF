@@ -270,7 +270,7 @@ class FeatDataset(Dataset):
             if feat_type in ["lcf0"]:
                 aux_feat = np.log(np.exp(aux_feat) * self.f0_factor)
             elif feat_type in ["cf1", "cf2", "cf3", "cf4"]:
-                aux_feat *= self.formants_factor[int(feat_type[-1])]
+                aux_feat *= self.formants_factor[int(feat_type[-1]) - 1]
             aux_feats += [aux_feat]
         aux_feats = np.concatenate(aux_feats, axis=1)
         # get dilated factor sequences

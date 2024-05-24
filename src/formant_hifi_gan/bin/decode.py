@@ -109,8 +109,11 @@ def main(config: DictConfig) -> None:
 
                     # save output signal as PCM 16 bit wav file
                     utt_id = os.path.splitext(os.path.basename(feat_path))[0]
-                    fo = "_".join([f"{f:.2f}" for f in config.f0_factors])
-                    save_path = os.path.join(out_dir, f"{utt_id}_f{f0_factor:.2f}_fo{fo}.wav")
+                    fo = "_".join([f"{f:.2f}" for f in formants_factor])
+                    spk_id = feat_path.split(os.path.sep)[config.spkidx]
+                    save_dir = os.path.join(out_dir, spk_id)
+                    os.makedirs(save_dir, exist_ok=True)
+                    save_path = os.path.join(save_dir, f"{utt_id}_f{f0_factor:.2f}_fo{fo}.wav")
                     y = y.view(-1).cpu().numpy()
                     sf.write(save_path, y, config.data.sample_rate, "PCM_16")
 
