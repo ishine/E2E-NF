@@ -9,7 +9,7 @@ allow_cache: false  # Whether to allow cache in dataset. If true, it requires cp
 
 # Feature settings
 sample_rate: 24000               # Sampling rate.
-hop_size: 120                    # Hop size.
+hop_size: 300                    # Hop size.
 dense_factors: [0.5, 1, 4, 8]    # Dense factor in PDCNNs.
 sine_amp: 0.1                    # Sine amplitude.
 noise_amp: 0.003                 # Noise amplitude.

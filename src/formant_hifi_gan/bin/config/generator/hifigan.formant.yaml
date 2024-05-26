@@ -17,7 +17,7 @@ resblock_dilations: # Dilations for residual blocks.
   - [1, 3, 5]
   - [1, 3, 5]
   - [1, 3, 5]
-use_additional_convs: false # Whether to use additional conv layer in residual blocks.
+use_additional_convs: true # Whether to use additional conv layer in residual blocks.
 use_sine_embs: false # Whether to use sine embeddings.
 use_qp_resblocks: false # Whether to use quasi-periodic residual blocks.
 bias: true # Whether to use bias parameter in conv.

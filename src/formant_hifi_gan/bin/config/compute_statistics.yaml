@@ -10,8 +10,8 @@ hydra:
         format: "[%(asctime)s][%(levelname)s][%(module)s | %(lineno)s] %(message)s"
     disable_existing_loggers: false
 
-feats: data/scp/jsut.list # List file of input features.
-stats: data/stats/jsut.joblib # Path to file to output statistics.
+feats: data/scp/jvs/train.list # List file of input features.
+stats: data/stats/jvs_no_dev.joblib # Path to file to output statistics.
 feat_types: [
     "f0",
     "lcf0",
@@ -23,4 +23,5 @@ feat_types: [
     "slope",
     "centroid",
     "energy",
+    "mfbsp",
   ] # Feature types.

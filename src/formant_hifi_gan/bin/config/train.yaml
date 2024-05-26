@@ -4,8 +4,8 @@ defaults:
   - _self_
   - generator: hifigan
   - discriminator: hifigan
-  - train: hifigan
-  - data: jvs100
+  - train: hifigan.default
+  - data: jvs.mfbsp
 
 hydra:
   run:
@@ -17,6 +17,6 @@ hydra:
         format: "[%(asctime)s][%(levelname)s][%(module)s | %(lineno)s] %(message)s"
     disable_existing_loggers: false
 
-out_dir: ./exp # Directory to output training results.
+out_dir: ./exp/jvs.hifigan # Directory to output training results.
 seed: 12345 # Seed number for random numbers.
 device: cuda:0
