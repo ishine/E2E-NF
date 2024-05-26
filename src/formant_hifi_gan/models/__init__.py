@@ -2,6 +2,7 @@ import numpy as np
 
 from .discriminator import *  # NOQA
 from .generator import *  # NOQA
+from .neuralformants import *  # NOQA
 
 
 def dilated_factor(batch_f0, fs, dense_factor):

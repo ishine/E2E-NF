@@ -131,7 +131,7 @@ class STFT:
 
         mfbsp = torch.matmul(self.mel_basis[mel_basis_key], spec)
         if log is not None:
-            mfbsp = dynamic_range_compression_torch(spec, clip_val=clip_val, log=log)
+            mfbsp = dynamic_range_compression_torch(mfbsp, clip_val=clip_val, log=log)
 
         return mfbsp
 
