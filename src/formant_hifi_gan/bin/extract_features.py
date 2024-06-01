@@ -1,3 +1,4 @@
+import os
 from logging import getLogger
 from os import PathLike
 from pathlib import Path
@@ -6,7 +7,7 @@ import hydra
 import numpy as np
 import torch
 from formant_hifi_gan.features import f0_utils, fixed, praat, spectral, spectrogram
-from formant_hifi_gan.utils import audio_io, file_io, filter
+from formant_hifi_gan.utils import audio_io, file_io, filter, utils
 from hydra.utils import to_absolute_path
 from joblib import Parallel, delayed
 from omegaconf import DictConfig, OmegaConf
@@ -16,17 +17,17 @@ from tqdm import tqdm
 logger = getLogger(__name__)
 
 
-def path_create(file_list: list[PathLike], outputpath: PathLike, ext: str = None):
+def path_create(file_list: list[PathLike], inputpath: PathLike, outputpath: PathLike, ext: str = None):
     for filepath in file_list:
-        path_replace(filepath, outputpath, ext)
+        path_replace(filepath, inputpath, outputpath, ext)
 
 
-def path_replace(filepath: PathLike, outputpath: PathLike, ext: str = None) -> Path:
-    filepath, outputpath = Path(filepath), Path(outputpath)
+def path_replace(filepath: PathLike, inputpath: PathLike, outputpath: PathLike, ext: str = None) -> Path:
+    filepath = str.replace(str(filepath), str(inputpath), str(outputpath))
+    filepath = Path(filepath)
     if ext is not None:
         filepath = filepath.with_suffix(ext)
-    outputpath.mkdir(parents=True, exist_ok=True)
-    filepath = outputpath.joinpath(filepath.name)
+    filepath.parent.mkdir(parents=True, exist_ok=True)
 
     return filepath
 
@@ -45,6 +46,7 @@ def aux_list_create(file_list: list[PathLike], config: DictConfig):
         for wav_name in wav_files:
             feat_name = path_replace(
                 wav_name,
+                config.in_dir,
                 config.out_dir,
                 ext=config.feature_format,
             )
@@ -80,7 +82,7 @@ def process(filepath: PathLike, config: DictConfig):
     )
 
     spec = to_stft.get_linear(torch.from_numpy(wav.astype(np.float32)))
-    mfbsp = to_stft.to_mel(spec, compress=True)
+    mfbsp = to_stft.to_mel(spec, log=config.log)
     mfbsp = mfbsp.numpy()
 
     f0 = f0_extractor.extract(wav, return_time=False)
@@ -96,16 +98,17 @@ def process(filepath: PathLike, config: DictConfig):
         logger.warning(f"all frame is unvoiced: {filepath}")
         return None
 
-    formants, fo_time = praat.get_optimized_formants(
+    formants, fo_time = praat.get_formants(
         wav,
         sr=config.sample_rate,
+        n_formant=config.n_formant,
         hop_length=config.hop_length,
         win_size=config.fo_win_size,
+        fmax=config.fo_max,
         pre_enphasis=config.pre_enphasis,
-        search_fo_max=config.search_fo_max,
-        search_fo_min=config.search_fo_min,
-        search_step=config.search_step,
     )
+    formants = praat.fix_formants(formants)
+
     uv, f0, cf0_lpf, spec, mfbsp, formants = fixed.adjust_min_len([uv, f0, cf0_lpf, spec, mfbsp, formants])
     assert uv.shape[0] == f0.shape[0] == cf0_lpf.shape[0] == spec.shape[-1] == mfbsp.shape[-1] == formants.shape[-1]
 
@@ -137,6 +140,7 @@ def process(filepath: PathLike, config: DictConfig):
 
     feat_name = path_replace(
         filepath,
+        config.in_dir,
         config.out_dir,
         ext=config.feature_format,
     )
@@ -169,20 +173,30 @@ def main(config: DictConfig):
     file_list = file_io.read_txt(to_absolute_path(config.file_list))
     logger.info(f"number of atterances = {len(file_list)}")
 
-    configs = [config] * len(file_list)
+    # list division
+    if config.spkinfo and Path(to_absolute_path(config.spkinfo)).exists():
+        # load speaker info
+        with open(to_absolute_path(config.spkinfo), "r") as f:
+            spkinfo = OmegaConf.load(f)
+        logger.info(f"Spkinfo {config.spkinfo} is used.")
+        # divide into each spk list
+        file_and_conf_list = utils.spk_division(file_list, config, spkinfo)
+    else:
+        logger.info(f"Since spkinfo {config.spkinfo} is not exist, default f0 range and power threshold are used.")
+        file_and_conf_list = [(file, config) for file in file_list]
 
     # set mode
     if config.inv:
         # create auxiliary feature list
         aux_list_create(to_absolute_path(config.file_list), config)
         # create folder
-        path_create(file_list, config.out_dir, config.feature_format)
+        path_create(file_list, config.in_dir, config.out_dir, config.feature_format)
 
     _ = [
         r
         for r in tqdm(
             Parallel(n_jobs=config.n_jobs, return_as="generator")(
-                (delayed(process)(path, config) for path, config in zip(file_list, configs))
+                (delayed(process)(path, config) for path, config in file_and_conf_list)
             ),
             total=len(file_list),
         )

@@ -3,7 +3,7 @@
 defaults:
   - _self_
   - generator: hifigan
-  - data: jvs100
+  - data: jvs.mfbsp
 
 hydra:
   run:
@@ -15,10 +15,12 @@ hydra:
         format: "[%(asctime)s][%(levelname)s][%(module)s | %(lineno)s] %(message)s"
     disable_existing_loggers: false
 
-out_dir: ./exp # Directory to output decoding results.
+out_dir: ./exp/jvs.hifigan # Directory to output decoding results.
+spkidx: -2
 checkpoint_path: # Path to the checkpoint of pre-trained model.
-checkpoint_steps: 3 # Path to the checkpoint of pre-trained model.
+checkpoint_steps: 100000 # Path to the checkpoint of pre-trained model.
 seed: 100 # Seed number for random numbers.
 save_source: false # Whether to save source excitation signals.
 f0_factors: [1.00] # F0 factor.
 formants_factors: [[1.0, 1.0, 1.0, 1.0]] # formants factor.
+device: cuda:1

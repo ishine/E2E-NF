@@ -7,8 +7,8 @@ def fix_formants(formants: np.ndarray) -> np.ndarray:
     value is 0 if the formant is not detected.
     """
     new_formants = np.zeros_like(formants)
-    nonzero_indices = np.nonzero(formants)
-    new_formants[nonzero_indices] = formants[nonzero_indices]
+    notnan_indices = ~np.isnan(formants)
+    new_formants[notnan_indices] = formants[notnan_indices]
 
     return new_formants
 

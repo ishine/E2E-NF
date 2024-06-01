@@ -11,8 +11,8 @@ import pyworld as pw
 import soundfile as sf
 import torch
 from formant_hifi_gan.features import SignalGenerator
+from formant_hifi_gan.models import dilated_factor
 from formant_hifi_gan.utils import file_io
-from formant_hifi_gan.utils.utils import dilated_factor
 from hydra.utils import instantiate, to_absolute_path
 from joblib import load
 from omegaconf import DictConfig

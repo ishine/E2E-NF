@@ -254,3 +254,71 @@ class AdaptiveResidualBlock(nn.Module):
                 xt = self.convsA[i](xt)
             x = xt + x
         return x
+
+
+class ResSkipBlock(nn.Module):
+    """Convolution block with residual and skip connections.
+
+    Args:
+        residual_channels (int): Residual connection channels.
+        gate_channels (int): Gated activation channels.
+        kernel_size (int): Kernel size of convolution layers.
+        skip_out_channels (int): Skip connection channels.
+        dilation (int): Dilation factor.
+        args (list): Additional arguments for Conv1d.
+        kwargs (dict): Additional arguments for Conv1d.
+    """
+
+    def __init__(
+        self,
+        residual_channels: int,  # 残差結合のチャネル数
+        gate_channels: int,  # ゲートのチャネル数
+        kernel_size: int,  # カーネルサイズ
+        skip_out_channels: int,  # スキップ結合のチャネル数
+        dilation: int = 1,  # dilation factor
+        *args,
+        **kwargs,
+    ):
+        super().__init__()
+        assert (kernel_size - 1) % 2 == 0, "Not support even number kernel size"
+        self.padding = (kernel_size - 1) * dilation // 2
+        self.conv = nn.Conv1d(
+            residual_channels,
+            gate_channels,
+            kernel_size,
+            *args,
+            padding=self.padding,
+            dilation=dilation,
+            **kwargs,
+        )
+
+        # ゲート付き活性化関数のために、1 次元畳み込みの出力は2 分割されることに注意
+        gate_out_channels = gate_channels // 2
+        self.conv1x1_out = nn.Conv1d(gate_out_channels, residual_channels, kernel_size=1, stride=1, bias=True)
+        self.conv1x1_skip = nn.Conv1d(gate_out_channels, skip_out_channels, kernel_size=1, stride=1, bias=True)
+
+    def forward(self, x: torch.Tensor) -> (torch.Tensor, torch.Tensor):
+        """Forward step
+
+        Args:
+            x: (B, C, T)
+
+        Returns:
+            x: output tensor
+            c: skip connection
+        """
+        residual = x
+        splitdim = 1
+
+        x = self.conv(x)
+
+        a, b = x.split(x.size(splitdim) // 2, dim=splitdim)
+
+        x = torch.tanh(a) * torch.sigmoid(b)
+
+        s = self.conv1x1_skip(x)
+        x = self.conv1x1_out(x)
+
+        x = x + residual
+
+        return x, s
