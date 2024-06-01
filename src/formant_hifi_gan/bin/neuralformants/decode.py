@@ -26,7 +26,10 @@ def main(config: DictConfig) -> None:
     os.environ["PYTHONHASHSEED"] = str(config.seed)
 
     # set device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if config.device != "":
+        device = torch.device(config.device)
+    else:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logger.info(f"Decode on {device}.")
 
     # load pre-trained model from checkpoint file
@@ -64,7 +67,7 @@ def main(config: DictConfig) -> None:
         for formants_factor in config.formants_factors:
             dataset = MelFeatDataset(
                 stats=to_absolute_path(config.data.stats),
-                feat_list=to_absolute_path(config.data.valid_feat),
+                feat_list=to_absolute_path(config.data.eval_feat),
                 allow_cache=config.data.allow_cache,
                 sample_rate=config.data.sample_rate,
                 hop_size=config.data.hop_size,
@@ -82,8 +85,7 @@ def main(config: DictConfig) -> None:
                     y = model(x).squeeze(0).cpu().numpy()
                     y = dataset.scaler["mfbsp"].transform(y.T).T
                     outs = vocoder(x=None, c=torch.from_numpy(y).float().unsqueeze(0).to(device))
-                    y_g_hat = outs[0]
-                    audio = y_g_hat.squeeze()
+                    audio = outs[0].squeeze()
                     rtf = (time() - start) / (audio.size(-1) / config.data.sample_rate)
                     pbar.set_postfix({"RTF": rtf})
                     total_rtf += rtf

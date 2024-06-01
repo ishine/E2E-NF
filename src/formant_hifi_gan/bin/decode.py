@@ -27,7 +27,6 @@ def main(config: DictConfig) -> None:
     os.environ["PYTHONHASHSEED"] = str(config.seed)
 
     # set device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if config.device != "":
         device = torch.device(config.device)
     else:
