@@ -871,14 +871,12 @@ class FormantHiFiGANGenerator(nn.Module):
                     dilation=dilation,
                 )
                 self.resskipblocks.append(conv)
-        self.post_resskip = nn.ModuleList()
-        if resskipblock_skip_out_channels != channels:
-            self.post_resskip = self.post_resskip.extend(
-                [
-                    nn.ReLU(),
-                    nn.Conv1d(resskipblock_skip_out_channels, channels, kernel_size=1, stride=1, bias=True),
-                ]
-            )
+        self.post_resskip = nn.ModuleList(
+            [
+                nn.ReLU(),
+                nn.Conv1d(resskipblock_skip_out_channels, channels, kernel_size=1, stride=1, bias=True),
+            ]
+        )
 
         self.num_upsamples = len(upsample_kernel_sizes)
         self.qp_resdual_dilations = qp_resblock_dilations
