@@ -322,3 +322,92 @@ class ResSkipBlock(nn.Module):
         x = x + residual
 
         return x, s
+
+
+class ResidualBlockAlt(nn.Module):
+    """Residual block module in CycleGAN."""
+
+    def __init__(
+        self,
+        kernel_size=3,
+        channels=512,
+        dilations=(1, 1),
+        bias=True,
+        use_additional_convs=True,
+        nonlinear_activation="LeakyReLU",
+        nonlinear_activation_params={"negative_slope": 0.1},
+    ):
+        """Initialize ResidualBlock module.
+
+        Args:
+            kernel_size (int): Kernel size of dilation convolution layer.
+            channels (int): Number of channels for convolution layer.
+            dilations (List[int]): List of dilation factors.
+            use_additional_convs (bool): Whether to use additional convolution layers.
+            bias (bool): Whether to add bias parameter in convolution layers.
+            nonlinear_activation (str): Activation function module name.
+            nonlinear_activation_params (dict): Hyperparameters for activation function.
+
+        """
+        super().__init__()
+        self.use_additional_convs = use_additional_convs
+        self.convs1 = nn.ModuleList()
+        if use_additional_convs:
+            self.convs2 = nn.ModuleList()
+        assert kernel_size % 2 == 1, "Kernel size must be odd number."
+        for dilation in dilations:
+            if nonlinear_activation == "Snake":
+                nonlinear = Snake(channels, **nonlinear_activation_params)
+            else:
+                nonlinear = getattr(nn, nonlinear_activation)(**nonlinear_activation_params)
+            if nonlinear_activation == "GLU":
+                out_channels = channels * 2
+            else:
+                out_channels = channels
+            self.convs1 += [
+                nn.Sequential(
+                    nn.Conv1d(
+                        channels,
+                        out_channels,
+                        kernel_size,
+                        dilation=dilation,
+                        bias=bias,
+                        padding=(kernel_size - 1) // 2 * dilation,
+                    ),
+                    nonlinear,
+                )
+            ]
+            if use_additional_convs:
+                if nonlinear_activation == "Snake":
+                    nonlinear = Snake(channels, **nonlinear_activation_params)
+                else:
+                    nonlinear = getattr(nn, nonlinear_activation)(**nonlinear_activation_params)
+                self.convs2 += [
+                    nn.Sequential(
+                        nn.Conv1d(
+                            channels,
+                            channels,
+                            kernel_size,
+                            dilation=1,
+                            bias=bias,
+                            padding=(kernel_size - 1) // 2,
+                        ),
+                    )
+                ]
+
+    def forward(self, x):
+        """Calculate forward propagation.
+
+        Args:
+            x (Tensor): Input tensor (B, channels, T).
+
+        Returns:
+            Tensor: Output tensor (B, channels, T).
+
+        """
+        for idx in range(len(self.convs1)):
+            xt = self.convs1[idx](x)
+            if self.use_additional_convs:
+                xt = self.convs2[idx](xt)
+            x = xt + x
+        return x

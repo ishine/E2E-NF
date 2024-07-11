@@ -280,6 +280,9 @@ class FeatDataset(Dataset):
         # adjust length
         aux_feats, f0, cf0 = validate_length((aux_feats, f0, cf0))
 
+        f0 *= self.f0_factor
+        cf0 *= self.f0_factor
+
         if self.return_filename:
             items = self.feat_files[idx], aux_feats, f0, cf0
         else:

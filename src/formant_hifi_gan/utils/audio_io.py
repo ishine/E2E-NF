@@ -1,3 +1,4 @@
+from os import PathLike
 import librosa
 import numpy as np
 import soundfile as sf
@@ -78,3 +79,6 @@ def load_wav_to_torch(full_path, target_sr=None, return_empty_on_exception=False
         sampling_rate = target_sr
 
     return data, sampling_rate
+
+def save_wav(path: PathLike, wav: np.ndarray, sr: int):
+    sf.write(path, wav, sr, "PCM_16")

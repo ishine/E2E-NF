@@ -32,16 +32,16 @@ def path_replace(filepath: PathLike, inputpath: PathLike, outputpath: PathLike, 
     return filepath
 
 
-def aux_list_create(file_list: list[PathLike], config: DictConfig):
+def aux_list_create(list_file: PathLike, config: DictConfig):
     """Create list of auxiliary acoustic features
 
     Args:
-        wav_list_file (str): Filename of wav list
+        list_file (str): Filename of wav list
         config (dict): Config
 
     """
-    aux_list_file = file_list.replace(".scp", ".list")
-    wav_files = file_io.read_txt(file_list)
+    aux_list_file = list_file.replace(".scp", ".list")
+    wav_files = file_io.read_txt(list_file)
     with open(aux_list_file, "w") as f:
         for wav_name in wav_files:
             feat_name = path_replace(
