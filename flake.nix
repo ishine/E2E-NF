@@ -34,6 +34,9 @@
                 cudnn
               ];
             };
+            ldFallback.libraries = [
+              pkgs.sox.lib
+            ];
           };
           devcontainer = {
             devenvShellModule = {

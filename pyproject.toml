@@ -7,11 +7,12 @@ readme = "README.md"
 packages = [{ include = "formant_hifi_gan", from = "src" }]
 
 [tool.poetry.scripts]
-extract_features = "formant_hifi_gan.bin.extract_features:main"
-compute_statistics = "formant_hifi_gan.bin.compute_statistics:main"
-train = "formant_hifi_gan.bin.train:main"
-decode = "formant_hifi_gan.bin.decode:main"
 anasyn = "formant_hifi_gan.bin.anasyn:main"
+compute_statistics = "formant_hifi_gan.bin.compute_statistics:main"
+data_augment = "formant_hifi_gan.bin.data_augment:main"
+decode = "formant_hifi_gan.bin.decode:main"
+extract_features = "formant_hifi_gan.bin.extract_features:main"
+train = "formant_hifi_gan.bin.train:main"
 train_neuralformants = "formant_hifi_gan.bin.neuralformants.train:main"
 decode_neuralformants = "formant_hifi_gan.bin.neuralformants.decode:main"
 
