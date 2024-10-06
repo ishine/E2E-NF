@@ -1,20 +1,20 @@
 [tool.poetry]
-name = "formant-hifi-gan"
+name = "end-to-end-neural-formant-synthesis"
 version = "0.1.0"
 description = ""
-authors = ["misumisumi <dragon511southern@gmail.com>"]
+authors = ["Kobayashi Sumiharu <dragon511southern@gmail.com>"]
 readme = "README.md"
-packages = [{ include = "formant_hifi_gan", from = "src" }]
+packages = [{ include = "e2enf", from = "src" }]
 
 [tool.poetry.scripts]
-anasyn = "formant_hifi_gan.bin.anasyn:main"
-compute_statistics = "formant_hifi_gan.bin.compute_statistics:main"
-data_augment = "formant_hifi_gan.bin.data_augment:main"
-decode = "formant_hifi_gan.bin.decode:main"
-extract_features = "formant_hifi_gan.bin.extract_features:main"
-train = "formant_hifi_gan.bin.train:main"
-train_neuralformants = "formant_hifi_gan.bin.neuralformants.train:main"
-decode_neuralformants = "formant_hifi_gan.bin.neuralformants.decode:main"
+anasyn = "e2enf.bin.anasyn:main"
+compute_statistics = "e2enf.bin.compute_statistics:main"
+data_augment = "e2enf.bin.data_augment:main"
+decode = "e2enf.bin.decode:main"
+extract_features = "e2enf.bin.extract_features:main"
+train = "e2enf.bin.train:main"
+train_neuralformants = "e2enf.bin.neuralformants.train:main"
+decode_neuralformants = "e2enf.bin.neuralformants.decode:main"
 
 [tool.poetry.dependencies]
 python = "~3.11"
