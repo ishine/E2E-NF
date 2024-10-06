@@ -7,14 +7,14 @@ readme = "README.md"
 packages = [{ include = "e2enf", from = "src" }]
 
 [tool.poetry.scripts]
-anasyn = "e2enf.bin.anasyn:main"
-compute_statistics = "e2enf.bin.compute_statistics:main"
-data_augment = "e2enf.bin.data_augment:main"
-decode = "e2enf.bin.decode:main"
-extract_features = "e2enf.bin.extract_features:main"
-train = "e2enf.bin.train:main"
-train_neuralformants = "e2enf.bin.neuralformants.train:main"
-decode_neuralformants = "e2enf.bin.neuralformants.decode:main"
+e2enf-anasyn = "e2enf.bin.anasyn:main"
+e2enf-compute_statistics = "e2enf.bin.compute_statistics:main"
+e2enf-data_augment = "e2enf.bin.data_augment:main"
+e2enf-decode = "e2enf.bin.decode:main"
+e2enf-extract_features = "e2enf.bin.extract_features:main"
+e2enf-train = "e2enf.bin.train:main"
+nf-train = "e2enf.bin.neuralformants.train:main"
+nf-decode = "e2enf.bin.neuralformants.decode:main"
 
 [tool.poetry.dependencies]
 python = "~3.11"
