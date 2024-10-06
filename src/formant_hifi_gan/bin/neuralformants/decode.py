@@ -62,7 +62,6 @@ def main(config: DictConfig) -> None:
     out_dir = to_absolute_path(os.path.join(config.out_dir, "wav", str(checkpoint_steps)))
     os.makedirs(out_dir, exist_ok=True)
 
-    total_rtf = 0.0
     for f0_factor in config.f0_factors:
         for formants_factor in config.formants_factors:
             dataset = MelFeatDataset(
@@ -79,6 +78,7 @@ def main(config: DictConfig) -> None:
             logger.info(f"The number of features to be decoded = {len(dataset)}.")
 
             with torch.no_grad(), tqdm(dataset, desc="[decode]") as pbar:
+                total_rtf = 0.0
                 for idx, (feat_path, _, x) in enumerate(pbar, 1):
                     x = torch.FloatTensor(x.T).unsqueeze(0).to(device)
                     start = time()
@@ -101,7 +101,8 @@ def main(config: DictConfig) -> None:
                     sf.write(save_path, audio, config.data.sample_rate, "PCM_16")
 
                 # report average RTF
-                logger.info(f"Finished generation of {idx} utterances (RTF = {total_rtf / idx:.4f}).")
+                mean_rtf = total_rtf / len(dataset)
+                logger.info(f"Finished generation of {idx} utterances (RTF: {mean_rtf:.6f}, ×{1 / mean_rtf:.3f}).")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,33 @@
+# @package _global_
+
+hydra:
+  run:
+    dir: ./
+  output_subdir: null
+  job_logging:
+    formatters:
+      simple:
+        format: "[%(asctime)s][%(levelname)s][%(module)s | %(lineno)s] %(message)s"
+    disable_existing_loggers: false
+
+file_list: data/scp/jvs/train.scp # List filr of input wav files.
+in_dir: wav
+out_dir: wav/augment # Directory to save generated samples.
+feature_format: .aug.wav # Feature format.
+n_jobs: -1
+
+sample_rate: 24000 # Sampling rate.
+spkinfo: data/spk_info.yaml # YAML format speaker information.
+spkidx: -2 # Speaker index of the split path.
+inv: true # If false, wav is restored from acoustic features.
+
+aug_sr_min: 16000 # lower_scale=sr/aug_sr_min
+aug_sr_max: 32000 # higher_scale=sr/aug_sr_max
+aug_sr_step: 2000 # Hz
+rate_augmentation: 0.5
+norm_gain: false
+norm_db_max: -1 # <0
+norm_db_min: -1 # <0
+norm_db_step: 1
+save_no_aug: false
+seed: 100

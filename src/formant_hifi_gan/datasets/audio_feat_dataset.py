@@ -263,15 +263,12 @@ class FeatDataset(Dataset):
         for feat_type in self.aux_feats:
             if feat_type in ["lcf0"]:
                 aux_feat = read_hdf5(to_absolute_path(self.feat_files[idx]), f"/{feat_type.replace('l', '')}")
-                aux_feat = np.log(aux_feat)
+                aux_feat = np.log(aux_feat) + np.log(self.f0_factor)
             else:
                 aux_feat = read_hdf5(to_absolute_path(self.feat_files[idx]), f"/{feat_type}")
-            aux_feat = self.scaler[f"{feat_type}"].transform(aux_feat)
-            if feat_type in ["lcf0"]:
-                aux_feat = np.log(np.exp(aux_feat) * self.f0_factor)
-            elif feat_type in ["cf1", "cf2", "cf3", "cf4"]:
-                aux_feat *= self.formants_factor[int(feat_type[-1]) - 1]
-            aux_feats += [aux_feat]
+                if feat_type in ["cf1", "cf2", "cf3", "cf4"]:
+                    aux_feat *= self.formants_factor[int(feat_type[-1]) - 1]
+            aux_feats += [self.scaler[f"{feat_type}"].transform(aux_feat)]
         aux_feats = np.concatenate(aux_feats, axis=1)
         # get dilated factor sequences
         f0 = read_hdf5(to_absolute_path(self.feat_files[idx]), "/f0")  # discrete F0
@@ -397,15 +394,12 @@ class MelFeatDataset(Dataset):
         for feat_type in self.aux_feats:
             if feat_type in ["lcf0"]:
                 aux_feat = read_hdf5(to_absolute_path(self.feat_files[idx]), f"/{feat_type.replace('l', '')}")
-                aux_feat = np.log(aux_feat)
+                aux_feat = np.log(aux_feat) + np.log(self.f0_factor)
             else:
                 aux_feat = read_hdf5(to_absolute_path(self.feat_files[idx]), f"/{feat_type}")
-            aux_feat = self.scaler[f"{feat_type}"].transform(aux_feat)
-            if feat_type in ["lcf0"]:
-                aux_feat = np.log(np.exp(aux_feat) * self.f0_factor)
-            elif feat_type in ["cf1", "cf2", "cf3", "cf4"]:
-                aux_feat *= self.formants_factor[int(feat_type[-1]) - 1]
-            aux_feats += [aux_feat]
+                if feat_type in ["cf1", "cf2", "cf3", "cf4"]:
+                    aux_feat *= self.formants_factor[int(feat_type[-1]) - 1]
+            aux_feats += [self.scaler[f"{feat_type}"].transform(aux_feat)]
         aux_feats = np.concatenate(aux_feats, axis=1)
 
         mfbsp = read_hdf5(to_absolute_path(self.feat_files[idx]), "/mfbsp")
