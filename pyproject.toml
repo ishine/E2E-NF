@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "end-to-end-neural-formant-synthesis"
+name = "e2enf"
 version = "0.1.0"
 description = ""
 authors = ["Kobayashi Sumiharu <dragon511southern@gmail.com>"]
@@ -19,18 +19,18 @@ nf-decode = "e2enf.bin.neuralformants.decode:main"
 [tool.poetry.dependencies]
 python = "~3.11"
 torch = [
-    { version = "~2.1.0+cu121", source = "torch_cu121", markers = "sys_platform == 'linux'" },
-    { version = "~2.1.0+cu121", source = "torch_cu121", markers = "sys_platform == 'win32'" },
+    { version = "~2.1.0", source = "torch_cu121", markers = "sys_platform == 'linux'" },
+    { version = "~2.1.0", source = "torch_cu121", markers = "sys_platform == 'win32'" },
     { version = "~2.1.0", source = "PyPI", markers = "sys_platform == 'darwin'" },
 ]
 torchaudio = [
-    { version = "~2.1.0+cu121", source = "torch_cu121", markers = "sys_platform == 'linux'" },
-    { version = "~2.1.0+cu121", source = "torch_cu121", markers = "sys_platform == 'win32'" },
+    { version = "~2.1.0", source = "torch_cu121", markers = "sys_platform == 'linux'" },
+    { version = "~2.1.0", source = "torch_cu121", markers = "sys_platform == 'win32'" },
     { version = "~2.1.0", source = "PyPI", markers = "sys_platform == 'darwin'" },
 ]
 torchvision = [
-    { version = "~0.16.0+cu121", source = "torch_cu121", markers = "sys_platform == 'linux'" },
-    { version = "~0.16.0+cu121", source = "torch_cu121", markers = "sys_platform == 'win32'" },
+    { version = "~0.16.0", source = "torch_cu121", markers = "sys_platform == 'linux'" },
+    { version = "~0.16.0", source = "torch_cu121", markers = "sys_platform == 'win32'" },
     { version = "~0.16.0", source = "PyPI", markers = "sys_platform == 'darwin'" },
 ]
 pyworld = { git = "https://github.com/JeremyCCHsu/Python-Wrapper-for-World-Vocoder.git" }
@@ -56,7 +56,7 @@ url = "https://download.pytorch.org/whl/cu121"
 priority = "supplemental"
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.typos.default.extend-words]
