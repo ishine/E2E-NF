@@ -1052,7 +1052,7 @@ class FormantHiFiGANGenerator(nn.Module):
         self.apply(_apply_weight_norm)
 
 
-class FormantHiFiGANPlusGenerator(nn.Module):
+class E2ENFPlusGenerator(nn.Module):
     """HiFiGAN generator module with customizable pitch-dependent mechanisms."""
 
     def __init__(

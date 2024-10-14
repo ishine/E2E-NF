@@ -1,14 +1,7 @@
-_target_: e2enf.models.FormantHiFiGANGenerator
+_target_: e2enf.models.E2ENFPlusGenerator
 in_channels: 9 # Number of input channels.
 out_channels: 1 # Number of output channels.
 channels: 512 # Number of initial channels.
-resskipblock_dilations:
-  - [1, 2, 4]
-  - [1, 2, 4]
-resskipblock_channels: 512
-resskipblock_gate_channels: 128
-resskipblock_skip_out_channels: 512
-resskipblock_kernel_size: 3
 kernel_size: 7 # Kernel size of initial and final conv layers.
 upsample_scales: [5, 5, 4, 3] # Upsampling scales.
 upsample_kernel_sizes: [10, 10, 8, 6] # Kernel size for upsampling layers.
@@ -18,6 +11,14 @@ qp_resblock_dilations: # Dilations for quasi-periodic residual blocks.
   - [1, 2]
   - [1, 2, 4]
   - [1, 2, 4, 8]
+pre_resblock_dilations:
+  - [1, 1, 1]
+  - [1, 1, 1]
+pre_resblock_channels: 512
+pre_resblock_kernel_size: 3
+pre_resblock_nonlinear_activation: "GLU"
+pre_resblock_nonlinear_activation_params:
+  dim: 1
 qp_use_additional_convs: true # Whether to use additional conv layers.
 resblock_kernel_sizes: [3, 7, 11] # Kernel size for residual blocks.
 resblock_dilations: # Dilations for residual blocks.

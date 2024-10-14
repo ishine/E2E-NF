@@ -10,7 +10,7 @@ hydra:
         format: "[%(asctime)s][%(levelname)s][%(module)s | %(lineno)s] %(message)s"
     disable_existing_loggers: false
 
-file_list: data/scp/jvs/train.scp # List filr of input wav files.
+file_list: # List filr of input wav files.
 in_dir: wav
 out_dir: wav/augment # Directory to save generated samples.
 feature_format: .aug.wav # Feature format.
