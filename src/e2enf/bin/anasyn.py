@@ -2,11 +2,11 @@
 import copy
 import os
 from logging import getLogger
+from os import PathLike
+from pathlib import Path
 
 import hydra
-import librosa
 import numpy as np
-import pysptk
 import pyworld as pw
 import soundfile as sf
 import torch
@@ -15,47 +15,18 @@ from joblib import load
 from omegaconf import DictConfig
 from scipy.interpolate import interp1d
 
-from e2enf.features import SignalGenerator
+from e2enf.features import (
+    f0_utils,
+    fixed,
+    praat,
+    signalgenerator,
+    spectral,
+    spectrogram,
+)
 from e2enf.models import dilated_factor
-from e2enf.utils import file_io
+from e2enf.utils import audio_io, file_io, filter, utils
 
 logger = getLogger(__name__)
-
-# All-pass-filter coefficients {key -> sampling rate : value -> coefficient}
-ALPHA = {
-    8000: 0.312,
-    12000: 0.369,
-    16000: 0.410,
-    22050: 0.455,
-    24000: 0.466,
-    32000: 0.504,
-    44100: 0.544,
-    48000: 0.554,
-}
-
-
-def convert_continuous_f0(f0):
-    # get uv information as binary
-    uv = np.float32(f0 != 0)
-    # get start and end of f0
-    if (f0 == 0).all():
-        logger.warn("all of the f0 values are 0.")
-        return uv, f0, False
-    start_f0 = f0[f0 != 0][0]
-    end_f0 = f0[f0 != 0][-1]
-    # padding start and end of f0 sequence
-    cont_f0 = copy.deepcopy(f0)
-    start_idx = np.where(cont_f0 == start_f0)[0][0]
-    end_idx = np.where(cont_f0 == end_f0)[0][-1]
-    cont_f0[:start_idx] = start_f0
-    cont_f0[end_idx:] = end_f0
-    # get non-zero frame index
-    nz_frames = np.where(cont_f0 != 0)[0]
-    # perform linear interpolation
-    f = interp1d(nz_frames, cont_f0[nz_frames])
-    cont_f0 = f(np.arange(0, cont_f0.shape[0]))
-
-    return uv, cont_f0
 
 
 @torch.no_grad()
@@ -84,105 +55,155 @@ def main(config: DictConfig) -> None:
     scaler = load(config.stats)
 
     # get data processor
-    signal_generator = SignalGenerator(
+    signal_generator = signalgenerator.SignalGenerator(
         sample_rate=config.sample_rate,
-        hop_size=int(config.sample_rate * config.frame_period * 0.001),
+        hop_size=config.hop_length,
         sine_amp=config.sine_amp,
         noise_amp=config.noise_amp,
         signal_types=config.signal_types,
     )
 
-    # create output directory
-    os.makedirs(config.out_dir, exist_ok=True)
+    to_stft = spectrogram.STFT(
+        sr=config.sample_rate,
+        n_mels=config.n_mels,
+        n_fft=config.n_fft,
+        win_size=config.win_size,
+        hop_length=config.hop_length,
+        fmin=config.fmin,
+        fmax=config.fmax,
+        clip_val=config.clip_val,
+    )
+    f0_extractor = f0_utils.F0_Extractor(
+        "harvest",
+        sample_rate=config.sample_rate,
+        hop_size=config.hop_length,
+        f0_min=config.minf0,
+        f0_max=config.maxf0,
+        fix_by_reaper=False,
+    )
 
-    wav_files = file_io.find_files(config.in_dir, ".wav")
+    # create output directory
+    out_dir = Path(config.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    in_dir = Path(config.in_dir)
+    wav_files = file_io.find_files(in_dir, "*.wav")
 
     # loop all wav files in in_dir
-    for wav_file in wav_files:
-        logger.info(f"Start processing {wav_file}")
-        if os.path.splitext(wav_file)[1] != ".wav":
-            continue
-        wav_path = os.path.join(config.in_dir, wav_file)
+    for wav_path in wav_files:
+        logger.info(f"Start processing {wav_path}")
 
-        # WORLD analysis
-        x, sr = sf.read(to_absolute_path(wav_path))
-        if sr != config.sample_rate:
-            x = librosa.resample(x, orig_sr=sr, target_sr=config.sample_rate)
-        f0_, t = pw.harvest(
-            x,
-            config.sample_rate,
-            f0_floor=config.f0_floor,
-            f0_ceil=config.f0_ceil,
-            frame_period=config.frame_period,
+        wav, sr = audio_io.load_wav(wav_path, target_sr=config.sample_rate)
+        if config.highpass_cutoff > 0:
+            wav = filter.low_cut_filter(wav, sr, config.highpass_cutoff)
+
+        # Extract F0
+        f0 = f0_extractor.extract(wav, return_time=False)
+        uv, _cf0, is_all_uv = fixed.to_continuous(f0)
+        if is_all_uv:
+            lpf_fs = int(config.sample_rate / config.hop_length)
+            cf0_lpf = filter.low_pass_filter(_cf0, lpf_fs, cutoff=20)
+            next_cutoff = 70
+            while not (cf0_lpf >= [0]).all():
+                cf0_lpf = filter.low_pass_filter(_cf0, lpf_fs, cutoff=next_cutoff)
+                next_cutoff *= 2
+        else:
+            logger.warning(f"all frame is unvoiced: {wav_path}")
+            return None
+
+        # Extract formants
+        formants, fo_time = praat.get_formants(
+            wav,
+            sr=config.sample_rate,
+            n_formant=config.n_formant,
+            hop_length=config.hop_length,
+            win_size=config.fo_win_size,
+            fmax=config.fo_max,
+            pre_enphasis=config.pre_enphasis,
         )
-        sp = pw.cheaptrick(x, f0_, t, config.sample_rate)
-        ap = pw.d4c(x, f0_, t, config.sample_rate)
-        mcep = pysptk.sp2mc(sp, order=config.mcep_dim, alpha=ALPHA[config.sample_rate])
-        mcap = pysptk.sp2mc(ap, order=config.mcap_dim, alpha=ALPHA[config.sample_rate])
-        bap = pw.code_aperiodicity(ap, config.sample_rate)
+        formants = praat.fix_formants(formants)
 
-        # prepare f0 related features
-        uv, cf0_ = convert_continuous_f0(f0_)
-        uv = uv[:, np.newaxis]  # (T, 1)
-        f0_ = f0_[:, np.newaxis]  # (T, 1)
-        cf0_ = cf0_[:, np.newaxis]  # (T, 1)
+        # Extract spectral centroid and tilt and Energy
+        spec = to_stft.get_linear(torch.from_numpy(wav.astype(np.float32)))
+        mfbsp = to_stft.to_mel(spec, log=config.log)
+        mfbsp = mfbsp.numpy()
+        spec = spec.numpy()
+
+        uv, f0, cf0_lpf, spec, mfbsp, formants = fixed.adjust_min_len([uv, f0, cf0_lpf, spec, mfbsp, formants])
+        assert uv.shape[0] == f0.shape[0] == cf0_lpf.shape[0] == spec.shape[-1] == mfbsp.shape[-1] == formants.shape[-1]
+
+        mfbsp = mfbsp.T
+        centroid = spectral.get_centroid(spec, sr=config.sample_rate, n_fft=config.n_fft).T
+        slope = spectral.get_slope(spec)
+        energy = spectral.get_energy(spec)
+        slope = np.expand_dims(slope, axis=-1)
+        energy = np.expand_dims(energy, axis=-1)
+
+        f1, f2, f3, f4 = formants[0], formants[1], formants[2], formants[3]
+        _, cf1, _ = fixed.to_continuous(f1)
+        _, cf2, _ = fixed.to_continuous(f2)
+        _, cf3, _ = fixed.to_continuous(f3)
+        _, cf4, _ = fixed.to_continuous(f4)
+        uv = np.expand_dims(uv, axis=-1)
+        f0 = np.expand_dims(f0, axis=-1)
+        f1 = np.expand_dims(f1, axis=-1)
+        f2 = np.expand_dims(f2, axis=-1)
+        f3 = np.expand_dims(f3, axis=-1)
+        f4 = np.expand_dims(f4, axis=-1)
+        cf0 = np.expand_dims(cf0_lpf, axis=-1)
+        cf1 = np.expand_dims(cf1, axis=-1)
+        cf2 = np.expand_dims(cf2, axis=-1)
+        cf3 = np.expand_dims(cf3, axis=-1)
+        cf4 = np.expand_dims(cf4, axis=-1)
 
         for f0_factor in config.f0_factors:
-            f0 = f0_ * f0_factor
-            cf0 = cf0_ * f0_factor
+            for formants_factor in config.formants_factors:
+                # prepare input acoustic features
+                c = []
+                for feat_type in config.aux_feats:
+                    if feat_type == "f0":
+                        aux_feat = f0 * f0_factor
+                    elif feat_type == "lcf0":
+                        aux_feat = np.log(cf0) + np.log(f0_factor)
+                    elif feat_type in ["f1", "f2", "f3", "f4", "cf1", "cf2", "cf3", "cf4"]:
+                        aux_feat = locals()[feat_type] * formants_factor[int(feat_type[-1]) - 1]
+                    else:
+                        aux_feat = locals()[feat_type]
+                    c += [scaler[f"{feat_type}"].transform(aux_feat)]
+                c = np.concatenate(c, axis=1)
 
-            # prepare input acoustic features
-            c = []
-            for feat_type in config.aux_feats:
-                if feat_type == "f0":
-                    c += [scaler[feat_type].transform(f0)]
-                elif feat_type == "cf0":
-                    c += [scaler[feat_type].transform(cf0)]
-                elif feat_type == "uv":
-                    c += [scaler[feat_type].transform(uv)]
-                elif feat_type == "mcep":
-                    c += [scaler[feat_type].transform(mcep)]
-                elif feat_type == "mcap":
-                    c += [scaler[feat_type].transform(mcap)]
-                elif feat_type == "bap":
-                    c += [scaler[feat_type].transform(bap)]
-            c = np.concatenate(c, axis=1)
+                # prepare dense factors
+                dfs = []
+                for df, us in zip(
+                    config.dense_factors,
+                    np.cumprod(config.generator.upsample_scales),
+                ):
+                    dfs += [
+                        np.repeat(dilated_factor(cf0, config.sample_rate, df), us)
+                        if config.df_f0_type == "cf0"
+                        else np.repeat(dilated_factor(f0, config.sample_rate, df), us)
+                    ]
 
-            # prepare dense factors
-            dfs = []
-            for df, us in zip(
-                config.dense_factors,
-                np.cumprod(config.generator.upsample_scales),
-            ):
-                dfs += [
-                    np.repeat(dilated_factor(cf0, config.sample_rate, df), us)
-                    if config.df_f0_type == "cf0"
-                    else np.repeat(dilated_factor(f0, config.sample_rate, df), us)
-                ]
+                # convert to torch tensors
+                f0 = torch.FloatTensor(f0).view(1, 1, -1).to(device)
+                cf0 = torch.FloatTensor(cf0).view(1, 1, -1).to(device)
+                c = torch.FloatTensor(c).unsqueeze(0).transpose(2, 1).to(device)
+                dfs = [torch.FloatTensor(np.array(df)).view(1, 1, -1).to(device) for df in dfs]
 
-            # convert to torch tensors
-            f0 = torch.FloatTensor(f0).view(1, 1, -1).to(device)
-            cf0 = torch.FloatTensor(cf0).view(1, 1, -1).to(device)
-            c = torch.FloatTensor(c).unsqueeze(0).transpose(2, 1).to(device)
-            dfs = [torch.FloatTensor(np.array(df)).view(1, 1, -1).to(device) for df in dfs]
+                # generate input signals
+                if config.sine_f0_type == "cf0":
+                    in_signal = signal_generator(cf0)
+                elif config.sine_f0_type == "f0":
+                    in_signal = signal_generator(f0)
 
-            # generate input signals
-            if config.sine_f0_type == "cf0":
-                in_signal = signal_generator(cf0)
-            elif config.sine_f0_type == "f0":
-                in_signal = signal_generator(f0)
+                # synthesize with the neural vocoder
+                y = model(in_signal, c, dfs)[0]
 
-            # synthesize with the neural vocoder
-            y = model(in_signal, c, dfs)[0]
-
-            # save output signal as PCM 16 bit wav file
-            out_path = os.path.join(config.out_dir, wav_file).replace(".wav", f"_{f0_factor:.2f}.wav")
-            sf.write(
-                to_absolute_path(out_path),
-                y.view(-1).cpu().numpy(),
-                config.sample_rate,
-                "PCM_16",
-            )
+                # save output signal as PCM 16 bit wav file
+                fo = "_".join([f"{f:.2f}" for f in formants_factor])
+                save_path = out_dir.joinpath(Path(wav_path).name.replace(".wav", f"_f{f0_factor:.2f}_fo{fo}.wav"))
+                y = y.view(-1).cpu().numpy()
+                sf.write(save_path, y, config.sample_rate, "PCM_16")
 
 
 if __name__ == "__main__":
