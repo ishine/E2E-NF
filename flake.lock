@@ -489,7 +489,9 @@
       "inputs": {
         "conda-channels": "conda-channels",
         "devenv": "devenv",
-        "devenv-root": "devenv-root",
+        "devenv-root": [
+          "devenv-root"
+        ],
         "flake-parts": "flake-parts",
         "mach-nix": "mach-nix",
         "mk-shell-bin": "mk-shell-bin",
@@ -505,16 +507,16 @@
         "systems": "systems_6"
       },
       "locked": {
-        "lastModified": 1728206795,
-        "narHash": "sha256-6y5DfbpVifFFiDasYZi/baCVmNogbmYbd6/JQLmP2nY=",
+        "lastModified": 1728466999,
+        "narHash": "sha256-D7WyP1VxFtuAifZJp1sp0FRa9VQbOAeeYxP5VgRGkM8=",
         "owner": "misumisumi",
         "repo": "nix-ml-ops",
-        "rev": "4c79e1b4cb828cef7d34556d9ef9d524fd979e22",
+        "rev": "4d1e5ad009d53c64c891ac95ad022312daaae2bd",
         "type": "github"
       },
       "original": {
         "owner": "misumisumi",
-        "ref": "fix/cuda",
+        "ref": "feat/selecting-cuda-version",
         "repo": "nix-ml-ops",
         "type": "github"
       }
@@ -949,6 +951,7 @@
     },
     "root": {
       "inputs": {
+        "devenv-root": "devenv-root",
         "nix-ml-ops": "nix-ml-ops"
       }
     },

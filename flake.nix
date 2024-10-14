@@ -16,7 +16,7 @@
       flake = false;
     };
     nix-ml-ops = {
-      url = "github:misumisumi/nix-ml-ops/fix/cuda";
+      url = "github:atry/nix-ml-ops";
       inputs.devenv-root.follows = "devenv-root";
     };
   };
@@ -40,23 +40,27 @@
         {
           ml-ops = {
             common =
+              common:
               {
                 ldFallback.libraries = [
                   pkgs.sox.lib
                 ];
               }
               // lib.optionalAttrs (system != "aarch64-darwin") {
-                cuda = {
-                  version = pkgs.cudaPackages_12_1;
-                  packages =
-                    cp: with cp; [
+                cuda =
+                  let
+                    cfg = common.config.cuda;
+                  in
+                  {
+                    cudaPackages = pkgs.cudaPackages_12_1;
+                    packages = with cfg.cudaPackages; [
                       cuda_nvcc
                       cudatoolkit
                       cuda_cudart
                       libcublas
                       cudnn
                     ];
-                };
+                  };
               };
             devcontainer = {
               devenvShellModule = {
