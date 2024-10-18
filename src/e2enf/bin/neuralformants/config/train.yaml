@@ -4,7 +4,7 @@ defaults:
   - _self_
   - train: neuralformants
   - model: neuralformants
-  - data: jvs
+  - data: jvs.e2enf
 
 hydra:
   run:
@@ -16,6 +16,6 @@ hydra:
         format: "[%(asctime)s][%(levelname)s][%(module)s | %(lineno)s] %(message)s"
     disable_existing_loggers: false
 
-out_dir: ./exp/jvs.neuralformants # Directory to output training results.
+out_dir:  # Directory to output training results.
 seed: 12345 # Seed number for random numbers.
 device: "cuda:0"
