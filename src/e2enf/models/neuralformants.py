@@ -1,7 +1,6 @@
 import torch
 from packaging import version
 from torch import nn
-from torch.nn import functional as F
 
 from e2enf.layers.residual_block import ResSkipBlock
 

@@ -1,6 +1,5 @@
 import os
 from logging import getLogger
-from typing import Optional
 
 import numpy as np
 import torch

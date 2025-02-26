@@ -67,7 +67,7 @@ def write_hdf5(hdf5_name, hdf5_path, write_data, is_overwrite=True):
                 hdf5_file.__delitem__(hdf5_path)
             else:
                 logger.error(
-                    "Dataset in hdf5 file already exists. " "if you want to overwrite, please set is_overwrite = True."
+                    "Dataset in hdf5 file already exists. if you want to overwrite, please set is_overwrite = True."
                 )
                 hdf5_file.close()
                 sys.exit(1)

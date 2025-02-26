@@ -1,6 +1,5 @@
 from logging import getLogger
 
-import torch
 import torch.nn as nn
 
 from e2enf.layers import (

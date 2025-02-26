@@ -8,7 +8,7 @@ from hydra.utils import to_absolute_path
 from joblib import load
 from torch.utils.data import Dataset
 
-from e2enf.features.fixed import get_segment, validate_length
+from e2enf.features.fixed import validate_length
 from e2enf.utils.audio_io import load_wav
 from e2enf.utils.file_io import check_filename, read_hdf5, read_txt
 
@@ -70,7 +70,7 @@ class AudioFeatDataset(Dataset):
             idxs = [idx for idx in range(len(audio_files)) if audio_lengths[idx] > audio_length_threshold]
             if len(audio_files) != len(idxs):
                 logger.warning(
-                    f"Some files are filtered by audio length threshold " f"({len(audio_files)} -> {len(idxs)})."
+                    f"Some files are filtered by audio length threshold ({len(audio_files)} -> {len(idxs)})."
                 )
             audio_files = [audio_files[idx] for idx in idxs]
             feat_files = [feat_files[idx] for idx in idxs]
@@ -78,17 +78,15 @@ class AudioFeatDataset(Dataset):
             f0_lengths = [read_hdf5(to_absolute_path(f), "/f0").shape[0] for f in feat_files]
             idxs = [idx for idx in range(len(feat_files)) if f0_lengths[idx] > feat_length_threshold]
             if len(feat_files) != len(idxs):
-                logger.warning(
-                    f"Some files are filtered by mel length threshold " f"({len(feat_files)} -> {len(idxs)})."
-                )
+                logger.warning(f"Some files are filtered by mel length threshold ({len(feat_files)} -> {len(idxs)}).")
             audio_files = [audio_files[idx] for idx in idxs]
             feat_files = [feat_files[idx] for idx in idxs]
 
         # assert the number of files
         assert len(audio_files) != 0, f"${audio_list} is empty."
-        assert len(audio_files) == len(
-            feat_files
-        ), f"Number of audio and features files are different ({len(audio_files)} vs {len(feat_files)})."
+        assert len(audio_files) == len(feat_files), (
+            f"Number of audio and features files are different ({len(audio_files)} vs {len(feat_files)})."
+        )
 
         self.audio_files = audio_files
         self.feat_files = feat_files
@@ -216,9 +214,7 @@ class FeatDataset(Dataset):
             f0_lengths = [read_hdf5(to_absolute_path(f), "/f0").shape[0] for f in feat_files]
             idxs = [idx for idx in range(len(feat_files)) if f0_lengths[idx] > feat_length_threshold]
             if len(feat_files) != len(idxs):
-                logger.warning(
-                    f"Some files are filtered by mel length threshold " f"({len(feat_files)} -> {len(idxs)})."
-                )
+                logger.warning(f"Some files are filtered by mel length threshold ({len(feat_files)} -> {len(idxs)}).")
             feat_files = [feat_files[idx] for idx in idxs]
 
         # assert the number of files
@@ -348,9 +344,7 @@ class MelFeatDataset(Dataset):
             f0_lengths = [read_hdf5(to_absolute_path(f), "/f0").shape[0] for f in feat_files]
             idxs = [idx for idx in range(len(feat_files)) if f0_lengths[idx] > feat_length_threshold]
             if len(feat_files) != len(idxs):
-                logger.warning(
-                    f"Some files are filtered by mel length threshold " f"({len(feat_files)} -> {len(idxs)})."
-                )
+                logger.warning(f"Some files are filtered by mel length threshold ({len(feat_files)} -> {len(idxs)}).")
             feat_files = [feat_files[idx] for idx in idxs]
 
         # assert the number of files
