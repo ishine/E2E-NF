@@ -1,3 +1,5 @@
+import inspect
+
 import numpy as np
 import parselmouth
 
@@ -11,6 +13,44 @@ def fix_formants(formants: np.ndarray) -> np.ndarray:
     new_formants[notnan_indices] = formants[notnan_indices]
 
     return new_formants
+
+
+def get_lpc_smoothed_sp(
+    y: np.ndarray,
+    sr: int = 16000,
+    n_formant: float = 5.0,
+    hop_length: int = 80,
+    win_size: int = 400,
+    fmax: float = 5000.0,
+    pre_enphasis: float = 50.0,
+) -> np.ndarray:
+    # actual win_size is win_size * 2, because praat uses a Gaussian-like analysis window with sidelobes below -120dB
+    # more details: https://www.fon.hum.uva.nl/praat/manual/Sound__to_Formant__burg____.html
+    pad_left = (win_size * 2 - hop_length) // 2
+    pad_right = max((win_size * 2 - hop_length + 1) // 2, win_size - y.shape[-1] - pad_left)
+    if pad_right < y.shape[-1]:
+        mode = "reflect"
+    else:
+        mode = "constant"
+    y = np.pad(y, (pad_left, pad_right), mode=mode)
+
+    time_step = hop_length / sr
+    window_length = win_size / sr
+    spec_obj = parselmouth.Sound(y, sampling_frequency=sr).to_spectrogram(
+        time_step=time_step,
+        maximum_frequency=fmax,
+        window_length=window_length,
+    )
+    # praat use 2 * n_formant peaks to smooth the spectrum using lpc when extracting formant
+    num_peaks = n_formant * 2
+    time_from_frame = [spec_obj.frame_number_to_time(frame + 1) for frame in range(spec_obj.n_frames)]
+    sp = np.zeros((spec_obj.ny, len(time_from_frame)))
+    for frame, time in enumerate(time_from_frame):
+        spectrum_obj = spec_obj.to_spectrum_slice(time=time)
+        smoothed = spectrum_obj.lpc_smoothing(num_peaks=num_peaks, pre_emphasis_from=pre_enphasis)
+        sp[:, frame] = smoothed.values[0, :].reshape(-1)
+
+    return sp
 
 
 def get_formants(
