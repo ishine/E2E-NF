@@ -63,26 +63,31 @@
                   };
               };
             devcontainer = {
-              devenvShellModule = {
-                enterShell = ''
-                  if [ ! -f pyproject.toml ]; then
-                    poetry new --name="$(basename $PWD | tr [:upper:] [:lower:])" --src ./tmp
-                    mv ./tmp/* .
-                    rm -rf ./tmp
-                  fi
-                '';
-                packages = with pkgs; [
-                  bashInteractive
-                ];
-                languages.python = {
-                  enable = true;
-                  package = pkgs.python311;
-                  poetry = {
-                    enable = true;
-                    activate.enable = true;
+              devenvShellModule =
+                { config, ... }:
+                {
+                  packages = with pkgs; [
+                    bashInteractive
+                  ];
+                  enterShell = '''';
+                  env = {
+                    UV_PYTHON = config.languages.python.package;
+                  };
+                  languages = {
+                    python = {
+                      enable = true;
+                      package = pkgs.python311;
+                      venv.enable = true;
+                      uv = {
+                        enable = true;
+                        sync = {
+                          enable = true;
+                          arguments = [ "--frozen" ];
+                        };
+                      };
+                    };
                   };
                 };
-              };
             };
           };
         };
